@@ -22,12 +22,6 @@ variable "caddy_image" {
   description = "Container image for caddy"
 }
 
-variable "storage_account_name" {
-  type        = string
-  default     = "cocogarmstorage"
-  description = "Name for storage account"
-}
-
 variable "github_token" {
   type        = string
   description = "Github token for garm"

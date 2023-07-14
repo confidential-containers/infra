@@ -40,6 +40,10 @@ resource "azurerm_storage_share" "garm_share" {
   name                 = "garm-etc-folder"
   storage_account_name = azurerm_storage_account.garm_sa.name
   quota                = 10
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "random_password" "garm_jwt_secret" {
