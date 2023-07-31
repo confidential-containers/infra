@@ -12,7 +12,7 @@ variable "location" {
 
 variable "garm_image" {
   type        = string
-  default     = "ghcr.io/mkulke/garm:20230602"
+  default     = "ghcr.io/confidential-containers/garm:main"
   description = "Container image for garm"
 }
 
