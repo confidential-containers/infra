@@ -18,9 +18,9 @@ RUN go build -o /build/garm-provider-azure
 
 FROM debian:bullseye-slim
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
 	ca-certificates \
-	gettext-base
+	python3-jinja2
 
 RUN mkdir -p /etc/garm /root/.local/share/garm-cli
 RUN ln -s /etc/garm/cli-config.toml /root/.local/share/garm-cli/config.toml
@@ -29,6 +29,6 @@ COPY --from=builder /build/garm /usr/bin
 COPY --from=builder /build/garm-cli /usr/bin
 COPY --from=builder /build/garm-provider-azure /usr/bin
 
-COPY ./config.toml.tmpl /
-COPY ./azure-config.toml.tmpl /
+COPY ./templates /templates
+COPY ./template_config.py /
 COPY ./init.sh /

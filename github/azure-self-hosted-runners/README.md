@@ -22,11 +22,19 @@ The application is deployed as an [ACI](https://azure.microsoft.com/en-us/produc
 
 ### Deployment
 
-Create a `tf/terraform.tfvars` file with `github-token=github_pat...` or set it as env `export TF_VAR_github_token=github_pat...`.
+Github tokens (see above) need to be passed to Garm via tf variables, either by creating a `tf/terraform.tfvars` or specifying it on the cli:
+
+```hcl
+github_tokens = [
+	{
+		name = "some name"
+		token = "abc123"
+	},
+]
+```
 
 ```bash
-cd tf
-terraform apply
+terraform apply -var='github_tokens=[{"name":"some name","token":"abc123"}]'
 ```
 
 ## Configuration

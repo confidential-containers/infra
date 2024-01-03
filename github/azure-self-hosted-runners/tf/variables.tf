@@ -22,8 +22,11 @@ variable "caddy_image" {
   description = "Container image for caddy"
 }
 
-variable "github_token" {
-  type        = string
-  description = "Github token for garm"
+variable "github_config" {
+  type = list(object({
+    name  = string
+    token = string
+  }))
+  description = "Github configurations"
   sensitive   = true
 }

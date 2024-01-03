@@ -5,12 +5,12 @@ set -euo pipefail
 : "${GARM_HOSTNAME:?required}"
 : "${GARM_JWT_SECRET:?required}"
 : "${GARM_DB_PASSPHRASE:?required}"
-: "${GITHUB_TOKEN:?required}"
-envsubst < /config.toml.tmpl > /etc/garm/config.toml
+: "${GITHUB_CONFIG:?required}"
+python3 /template_config.py config.toml > /etc/garm/config.toml
 
 : "${SUBSCRIPTION_ID:?required}"
 : "${AZURE_CLIENT_ID:?required}"
-envsubst < /azure-config.toml.tmpl > /etc/garm/azure-config.toml
+python3 /template_config.py azure-config.toml > /etc/garm/azure-config.toml
 
 if [ -f /etc/garm/db.sqlite ]; then
 	echo "database already exists, skipping init"

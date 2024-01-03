@@ -1,3 +1,5 @@
+{# templates/config.toml #}
+
 [default]
 # This URL is used by instances to send back status messages as they install
 # the github actions runner. Status messages can be seen by querying the
@@ -5,7 +7,7 @@
 # Note: If you're using a reverse proxy in front of your garm installation,
 # this URL needs to point to the address of the reverse proxy. Using TLS is
 # highly encouraged.
-callback_url = "https://${GARM_HOSTNAME}/api/v1/callbacks/status"
+callback_url = "https://{{ env['GARM_HOSTNAME'] }}/api/v1/callbacks/status"
 
 # This URL is used by instances to retrieve information they need to set themselves
 # up. Access to this URL is granted using the same JWT token used to send back
@@ -14,7 +16,7 @@ callback_url = "https://${GARM_HOSTNAME}/api/v1/callbacks/status"
 # Note: If you're using a reverse proxy in front of your garm installation,
 # this URL needs to point to the address of the reverse proxy. Using TLS is
 # highly encouraged.
-metadata_url = "https://${GARM_HOSTNAME}/api/v1/metadata"
+metadata_url = "https://{{ env['GARM_HOSTNAME'] }}/api/v1/metadata"
 
 # This folder is defined here for future use. Right now, we create a SSH
 # public/private key-pair.
@@ -40,7 +42,7 @@ disable_auth = false
 [jwt_auth]
 # A JWT token secret used to sign tokens.
 # Obviously, this needs to be changed :).
-secret = "${GARM_JWT_SECRET}"
+secret = "{{ env['GARM_JWT_SECRET'] }}"
 
 # Time to live for tokens. Both the instances and you will use JWT tokens to
 # authenticate against the API. However, this TTL is applied only to tokens you
@@ -74,7 +76,7 @@ time_to_live = "8760h"
   # secret that gets saved to the database, using AES256. In the future, secrets
   # will be saved to something like Barbican or Vault, eliminating the need for
   # this. This setting needs to be 32 characters in size.
-  passphrase = "$GARM_DB_PASSPHRASE"
+  passphrase = "{{ env['GARM_DB_PASSPHRASE'] }}"
   [database.sqlite3]
     # Path on disk to the sqlite3 database file.
     db_file = "/etc/garm/db.sqlite"
@@ -96,26 +98,13 @@ provider_type = "external"
 # is no Vault integration (yet). This will change in the future.
 # Credentials defined here can be listed using the API. Obviously, only the name
 # and descriptions are returned.
+{% for config in github_config %}
 [[github]]
-  name = "garm"
-  description = "garm pat"
-  # This is a personal token with access to the repositories and organizations
-  # you plan on adding to garm. The "workflow" option needs to be selected in order
-  # to work with repositories, and the admin:org needs to be set if you plan on
-  # adding an organization.
-  oauth2_token = "$GITHUB_TOKEN"
-  # base_url (optional) is the URL at which your GitHub Enterprise Server can be accessed.
-  # If these credentials are for github.com, leave this setting blank
+  name = "{{ config.name }}"
+  description = ""
+  oauth2_token = "{{ config.token }}"
   base_url = ""
-  # api_base_url (optional) is the base URL where the GitHub Enterprise Server API can be accessed.
-  # Leave this blank if these credentials are for github.com.
   api_base_url = ""
-  # upload_base_url (optional) is the base URL where the GitHub Enterprise Server upload API can be accessed.
-  # Leave this blank if these credentials are for github.com, or if you don't have a separate URL
-  # for the upload API.
   upload_base_url = ""
-  # ca_cert_bundle (optional) is the CA certificate bundle in PEM format that will be used by the github
-  # client to talk to the API. This bundle will also be sent to all runners as bootstrap params.
-  # Use this option if you're using a self signed certificate.
-  # Leave this blank if you're using github.com or if your certificare is signed by a valid CA.
   ca_cert_bundle = ""
+{% endfor %}
