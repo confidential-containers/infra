@@ -1,0 +1,7 @@
+location = "eastus2"
+
+[credentials]
+subscription_id = "{{ env['SUBSCRIPTION_ID'] }}"
+
+[credentials.managed_identity]
+client_id = "{{ env['AZURE_CLIENT_ID'] }}"

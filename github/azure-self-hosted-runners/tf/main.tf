@@ -93,7 +93,7 @@ resource "azurerm_container_group" "garm_aci" {
       GARM_JWT_SECRET    = random_password.garm_jwt_secret.result
       GARM_DB_PASSPHRASE = random_password.garm_db_passphrase.result
       GARM_ADMIN_PW      = random_password.garm_admin_pw.result
-      GITHUB_TOKEN       = var.github_token
+      GITHUB_CONFIG      = jsonencode(var.github_config)
     }
 
     volume {
