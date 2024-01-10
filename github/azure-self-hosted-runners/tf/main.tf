@@ -87,6 +87,7 @@ resource "azurerm_container_group" "garm_aci" {
       GARM_HOSTNAME   = local.fqdn
       SUBSCRIPTION_ID = data.azurerm_subscription.current.subscription_id
       AZURE_CLIENT_ID = azurerm_user_assigned_identity.garm_id.client_id
+	  LOCATION        = var.location
     }
 
     secure_environment_variables = {

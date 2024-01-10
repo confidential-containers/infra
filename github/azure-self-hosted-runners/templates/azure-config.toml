@@ -1,4 +1,4 @@
-location = "eastus2"
+location = "{{ env['LOCATION'] }}"
 
 [credentials]
 subscription_id = "{{ env['SUBSCRIPTION_ID'] }}"
