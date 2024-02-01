@@ -10,6 +10,12 @@ variable "location" {
   description = "Location for all resources"
 }
 
+variable "vm_location" {
+  type        = string
+  default     = "westeurope"
+  description = "Location for the runner VMs"
+}
+
 variable "garm_image" {
   type        = string
   default     = "ghcr.io/confidential-containers/garm:main"
