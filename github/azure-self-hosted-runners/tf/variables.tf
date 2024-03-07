@@ -28,11 +28,7 @@ variable "caddy_image" {
   description = "Container image for caddy"
 }
 
-variable "github_config" {
-  type = list(object({
-    name  = string
-    token = string
-  }))
-  description = "Github configurations"
-  sensitive   = true
+variable "github_token_key_vault_id" {
+  type        = string
+  description = "key vault id holding github token secrets"
 }

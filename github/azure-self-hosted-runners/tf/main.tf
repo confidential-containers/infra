@@ -59,9 +59,20 @@ resource "random_password" "garm_admin_pw" {
   length = 32
 }
 
+data "azurerm_key_vault_secrets" "github_tokens" {
+  key_vault_id = var.github_token_key_vault_id
+}
+
+data "azurerm_key_vault_secret" "github_tokens" {
+  for_each     = toset(data.azurerm_key_vault_secrets.github_tokens.names)
+  name         = each.key
+  key_vault_id = var.github_token_key_vault_id
+}
+
 locals {
   dns_name_label = "garm-${random_string.suffix.result}"
   fqdn           = "${local.dns_name_label}.${var.location}.azurecontainer.io"
+  github_config  = [for r in data.azurerm_key_vault_secret.github_tokens : { name = r.name, token = r.value }]
 }
 
 resource "azurerm_container_group" "garm_aci" {
@@ -94,7 +105,7 @@ resource "azurerm_container_group" "garm_aci" {
       GARM_JWT_SECRET    = random_password.garm_jwt_secret.result
       GARM_DB_PASSPHRASE = random_password.garm_db_passphrase.result
       GARM_ADMIN_PW      = random_password.garm_admin_pw.result
-      GITHUB_CONFIG      = jsonencode(var.github_config)
+      GITHUB_CONFIG      = jsonencode(local.github_config)
     }
 
     volume {
