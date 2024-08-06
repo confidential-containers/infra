@@ -18,13 +18,13 @@ variable "vm_location" {
 
 variable "garm_image" {
   type        = string
-  default     = "ghcr.io/confidential-containers/garm:main"
+  default     = "ghcr.io/confidential-containers/garm@sha256:c79f9231ef52e8be9141623e3ef67bae0ab373e4ad5b0b6cee78e20fb54f994c"
   description = "Container image for garm"
 }
 
 variable "caddy_image" {
   type        = string
-  default     = "caddy:2.6.4"
+  default     = "ghcr.io/confidential-containers/caddy:2.6.4"
   description = "Container image for caddy"
 }
 
