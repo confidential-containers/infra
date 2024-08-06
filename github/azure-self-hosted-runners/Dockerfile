@@ -1,7 +1,7 @@
-FROM golang:1.20.4 AS builder
+FROM golang:1.21.7-bookworm AS builder
 
-ARG GARM_REV=fdfcc61
-ARG GARM_PROVIDER_AZURE_REV=2f9b248
+ARG GARM_REV=f68cf98
+ARG GARM_PROVIDER_AZURE_REV=278e136
 
 RUN mkdir /src /build
 RUN git clone https://github.com/cloudbase/garm.git /src/garm
@@ -16,7 +16,7 @@ WORKDIR /src/garm-provider-azure
 RUN git checkout ${GARM_PROVIDER_AZURE_REV}
 RUN go build -o /build/garm-provider-azure
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	ca-certificates \
