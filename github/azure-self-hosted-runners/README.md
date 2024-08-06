@@ -22,19 +22,15 @@ The application is deployed as an [ACI](https://azure.microsoft.com/en-us/produc
 
 ### Deployment
 
-Github tokens (see above) need to be passed to Garm via tf variables, either by creating a `tf/terraform.tfvars` or specifying it on the cli:
+Github tokens (see above) are passed to Garm via Azure Key Vault secrets. So first you should put the tokens as secrets in
+a Key Vault. The Key Vault id is then passed to terraform either by creating a `tf/terraform.tfvars` or specifying it on the cli:
 
 ```hcl
-github_tokens = [
-	{
-		name = "some name"
-		token = "abc123"
-	},
-]
+github_token_key_vault_id = "the vault id"
 ```
 
 ```bash
-terraform apply -var='github_tokens=[{"name":"some name","token":"abc123"}]'
+terraform apply -var='github_token_key_vault_id="the vault id"'
 ```
 
 ## Configuration
