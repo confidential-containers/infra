@@ -121,3 +121,19 @@ $ az container logs -g garm -n garm-kg1ocu --container-name garm --follow
 }
 127.0.0.1 - - [02/Jun/2023:13:01:21 +0000] "GET /api/v1/metadata/runner-registration-token/ HTTP/1.1" 200 29 "" "curl/7.81.0"
 ```
+
+## Updating expired Github tokens
+
+The Github tokens should be updated in the Garm installation from time-to-time because they expire. You will need to re-generate the expired token(s) first.
+
+Then you will need to update its value on the Key Vault. For example, suppose the new token is "github_pat_xxxxxxxx", to update the "garm" secret in the "garm-github-tokens" vault:
+
+```
+$ az keyvault secret set --value github_pat_xxxxxxxx --name garm --vault-name garm-github-tokens
+```
+
+Finally you will need to re-deploy Garm:
+
+```bash
+$ terraform apply
+```
