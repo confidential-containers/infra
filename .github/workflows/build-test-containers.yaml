@@ -16,6 +16,7 @@ on:
         type: choice
         options:
           - all
+          - multi-arch-cosign-sig
           - multi-arch-encrypted
           - multi-arch-encrypted-cosign-sig
           - unsig
