@@ -20,6 +20,7 @@
 	enc-cosign-sig \
 	test-container-unencrypted \
 	test-container-encrypted \
+	multi-arch-cosign-sig \
 	multi-arch-encrypted \
 	multi-arch-encrypted-cosign-sig \
 	busybox \
@@ -52,6 +53,7 @@ all: \
 	enc-cosign-sig \
 	test-container-unencrypted \
 	test-container-encrypted \
+	multi-arch-cosign-sig \
 	multi-arch-encrypted \
 	multi-arch-encrypted-cosign-sig \
 	busybox
@@ -159,6 +161,49 @@ busybox:
 		-f dockerfiles/busybox/Dockerfile \
 		dockerfiles/busybox
 	docker push $(REGISTRY)/$(COCO_PKG_IMGRS):busybox
+
+
+# ---------------------------------------------------------------------------
+# Multi-arch cosign-signed (unencrypted) target
+#
+# Builds the ccv0-ssh image for each platform, pushes per-arch images,
+# assembles a multi-arch manifest, and cosign-signs it.
+# ---------------------------------------------------------------------------
+
+multi-arch-cosign-sig: setup-buildx
+	@echo "==> Building multi-arch-cosign-sig for: $(PLATFORMS)"
+	@for platform in $(PLATFORMS); do \
+		arch=$$(echo $$platform | cut -d/ -f2); \
+		per_arch_tag="$(REGISTRY)/$(COCO_PKG):cosign-sig-$$arch"; \
+		\
+		echo "==> [$$arch] Building image"; \
+		docker buildx build \
+			--platform "$$platform" \
+			--provenance=false \
+			-t "ccv0-ssh-cosign:$$arch" \
+			--load \
+			-f dockerfiles/alpine-with-sshd/Dockerfile \
+			. ; \
+		\
+		echo "==> [$$arch] Pushing image"; \
+		skopeo copy --insecure-policy --override-arch "$$arch" \
+			"docker-daemon:ccv0-ssh-cosign:$$arch" \
+			"docker://$$per_arch_tag"; \
+	done
+	@echo "==> Creating multi-arch manifest"
+	@docker manifest rm $(REGISTRY)/$(COCO_PKG):multi-arch-cosign-sig 2>/dev/null || true
+	@docker manifest create $(REGISTRY)/$(COCO_PKG):multi-arch-cosign-sig \
+		$(foreach p,$(PLATFORMS),$(REGISTRY)/$(COCO_PKG):cosign-sig-$(lastword $(subst /, ,$(p))))
+	@$(foreach p,$(PLATFORMS), \
+		docker manifest annotate $(REGISTRY)/$(COCO_PKG):multi-arch-cosign-sig \
+			$(REGISTRY)/$(COCO_PKG):cosign-sig-$(lastword $(subst /, ,$(p))) \
+			--os linux --arch $(lastword $(subst /, ,$(p))) ; \
+	)
+	@echo "==> Pushing multi-arch manifest"
+	@docker manifest push $(REGISTRY)/$(COCO_PKG):multi-arch-cosign-sig
+	@echo "==> Cosign-signing multi-arch-cosign-sig"
+	${CURDIR}/scripts/make-cosign-sig.sh $(COCO_PKG) multi-arch-cosign-sig $(REGISTRY)
+	@echo "==> Done! Image: $(REGISTRY)/$(COCO_PKG):multi-arch-cosign-sig"
 
 
 # ---------------------------------------------------------------------------

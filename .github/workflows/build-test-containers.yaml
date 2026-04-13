@@ -16,6 +16,7 @@ on:
         type: choice
         options:
           - all
+          - multi-arch-cosign-sig
           - multi-arch-encrypted
           - multi-arch-encrypted-cosign-sig
           - unsig
@@ -75,7 +76,10 @@ jobs:
 
       - name: Start coco-keyprovider
         run: |
-          docker run -d --rm --network host --name coco-keyprovider coco-keyprovider
+          KEYS_DIR="${{ github.workspace }}/container-images/keys"
+          docker run -d --rm --network host --name coco-keyprovider \
+            -v "${KEYS_DIR}:${KEYS_DIR}:ro" \
+            coco-keyprovider
           echo "Waiting for coco-keyprovider on localhost:50000"
           timeout 30 bash -c 'until nc -z localhost 50000; do sleep 1; done'
           echo "coco-keyprovider is ready"
@@ -87,6 +91,8 @@ jobs:
 
       - name: Install cosign
         uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Import GPG key
         working-directory: container-images
