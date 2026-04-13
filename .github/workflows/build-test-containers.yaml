@@ -1,0 +1,103 @@
+name: Build Test Containers
+run-name: Build Test Containers
+
+on:
+  workflow_dispatch:
+    inputs:
+      guest_components_ref:
+        description: "guest-components branch or tag (default: main)"
+        required: false
+        default: "main"
+        type: string
+      target:
+        description: "Make target to run (default: all)"
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - multi-arch-encrypted
+          - multi-arch-encrypted-cosign-sig
+          - unsig
+          - cosign-sig
+          - simple-sig
+          - enc-unsig
+          - enc-cosign-sig
+          - test-container-unencrypted
+          - test-container-encrypted
+          - busybox
+  push:
+    branches:
+      - "main"
+    paths:
+      - "container-images/**"
+      - ".github/workflows/build-test-containers.yaml"
+
+jobs:
+  build-test-containers:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+
+    env:
+      REGISTRY: ghcr.io
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check out guest-components
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: confidential-containers/guest-components
+          ref: ${{ github.event.inputs.guest_components_ref || 'main' }}
+          path: ./guest-components
+
+      - name: Build coco-keyprovider container
+        run: |
+          docker build -t coco-keyprovider \
+            -f guest-components/attestation-agent/docker/Dockerfile.keyprovider \
+            guest-components/
+
+      - name: Start coco-keyprovider
+        run: |
+          docker run -d --rm --network host --name coco-keyprovider coco-keyprovider
+          echo "Waiting for coco-keyprovider on localhost:50000"
+          timeout 30 bash -c 'until nc -z localhost 50000; do sleep 1; done'
+          echo "coco-keyprovider is ready"
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo jq
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+
+      - name: Import GPG key
+        working-directory: container-images
+        run: gpg --batch --import keys/sign/github-runner.keys
+
+      - name: Run make target
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        working-directory: container-images
+        run: make ${{ github.event.inputs.target || 'all' }}
+
+      - name: Stop coco-keyprovider
+        if: always()
+        run: docker stop coco-keyprovider 2>/dev/null || true
