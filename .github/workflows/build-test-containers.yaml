@@ -27,6 +27,9 @@ on:
           - test-container-unencrypted
           - test-container-encrypted
           - busybox
+          - imgrs-multi-arch-unsigned
+          - imgrs-multi-arch-cosign-signed
+          - imgrs-multi-arch-cosign-signed-key2
   push:
     branches:
       - "main"
@@ -92,6 +95,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
         with:
+          cosign-release: 'v2.6.2'
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Import GPG key
@@ -101,6 +105,7 @@ jobs:
       - name: Run make target
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_PASSWORD_KEY2: ${{ secrets.COSIGN_PASSWORD_KEY2 }}
         working-directory: container-images
         run: make ${{ github.event.inputs.target || 'all' }}
 

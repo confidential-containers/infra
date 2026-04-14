@@ -24,6 +24,9 @@
 	multi-arch-encrypted \
 	multi-arch-encrypted-cosign-sig \
 	busybox \
+	imgrs-multi-arch-unsigned \
+	imgrs-multi-arch-cosign-signed \
+	imgrs-multi-arch-cosign-signed-key2 \
 	setup-buildx \
 	coco-keyprovider \
 	all
@@ -56,7 +59,10 @@ all: \
 	multi-arch-cosign-sig \
 	multi-arch-encrypted \
 	multi-arch-encrypted-cosign-sig \
-	busybox
+	busybox \
+	imgrs-multi-arch-unsigned \
+	imgrs-multi-arch-cosign-signed \
+	imgrs-multi-arch-cosign-signed-key2
 
 
 # ---------------------------------------------------------------------------
@@ -295,3 +301,127 @@ multi-arch-encrypted-cosign-sig: multi-arch-encrypted
 	@echo "==> Cosign-signing multi-arch-encrypted-cosign-sig"
 	${CURDIR}/scripts/make-cosign-sig.sh $(COCO_PKG) multi-arch-encrypted-cosign-sig $(REGISTRY)
 	@echo "==> Done! Image: $(REGISTRY)/$(COCO_PKG):multi-arch-encrypted-cosign-sig"
+
+
+# ---------------------------------------------------------------------------
+# Multi-arch test-container-image-rs targets
+#
+# These produce multi-arch manifests under COCO_PKG_IMGRS for use by
+# kata-containers image-signature verification tests.
+# ---------------------------------------------------------------------------
+
+imgrs-multi-arch-unsigned: setup-buildx
+	@echo "==> Building imgrs-multi-arch-unsigned for: $(PLATFORMS)"
+	@for platform in $(PLATFORMS); do \
+		arch=$$(echo $$platform | cut -d/ -f2); \
+		per_arch_tag="$(REGISTRY)/$(COCO_PKG_IMGRS):unsigned-$$arch"; \
+		\
+		echo "==> [$$arch] Building image"; \
+		docker buildx build \
+			--platform "$$platform" \
+			--provenance=false \
+			--no-cache \
+			--build-arg IMAGE_VARIANT=unsigned \
+			-t "imgrs-unsigned:$$arch" \
+			--load \
+			-f dockerfiles/busybox/Dockerfile \
+			dockerfiles/busybox ; \
+		\
+		echo "==> [$$arch] Pushing image"; \
+		skopeo copy --insecure-policy --override-arch "$$arch" \
+			"docker-daemon:imgrs-unsigned:$$arch" \
+			"docker://$$per_arch_tag"; \
+	done
+	@echo "==> Creating multi-arch manifest"
+	@docker manifest rm $(REGISTRY)/$(COCO_PKG_IMGRS):unsigned 2>/dev/null || true
+	@docker manifest create $(REGISTRY)/$(COCO_PKG_IMGRS):unsigned \
+		$(foreach p,$(PLATFORMS),$(REGISTRY)/$(COCO_PKG_IMGRS):unsigned-$(lastword $(subst /, ,$(p))))
+	@$(foreach p,$(PLATFORMS), \
+		docker manifest annotate $(REGISTRY)/$(COCO_PKG_IMGRS):unsigned \
+			$(REGISTRY)/$(COCO_PKG_IMGRS):unsigned-$(lastword $(subst /, ,$(p))) \
+			--os linux --arch $(lastword $(subst /, ,$(p))) ; \
+	)
+	@echo "==> Pushing multi-arch manifest"
+	@docker manifest push $(REGISTRY)/$(COCO_PKG_IMGRS):unsigned
+	@echo "==> Done! Image: $(REGISTRY)/$(COCO_PKG_IMGRS):unsigned"
+
+imgrs-multi-arch-cosign-signed: setup-buildx
+	@echo "==> Building imgrs-multi-arch-cosign-signed for: $(PLATFORMS)"
+	@for platform in $(PLATFORMS); do \
+		arch=$$(echo $$platform | cut -d/ -f2); \
+		per_arch_tag="$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-$$arch"; \
+		\
+		echo "==> [$$arch] Building image"; \
+		docker buildx build \
+			--platform "$$platform" \
+			--provenance=false \
+			--no-cache \
+			--build-arg IMAGE_VARIANT=cosign-signed \
+			-t "imgrs-cosign-signed:$$arch" \
+			--load \
+			-f dockerfiles/busybox/Dockerfile \
+			dockerfiles/busybox ; \
+		\
+		echo "==> [$$arch] Pushing image"; \
+		skopeo copy --insecure-policy --override-arch "$$arch" \
+			"docker-daemon:imgrs-cosign-signed:$$arch" \
+			"docker://$$per_arch_tag"; \
+		\
+		echo "==> [$$arch] Cosign-signing per-arch image"; \
+		${CURDIR}/scripts/make-cosign-sig.sh $(COCO_PKG_IMGRS) cosign-signed-$$arch $(REGISTRY); \
+	done
+	@echo "==> Creating multi-arch manifest"
+	@docker manifest rm $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed 2>/dev/null || true
+	@docker manifest create $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed \
+		$(foreach p,$(PLATFORMS),$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-$(lastword $(subst /, ,$(p))))
+	@$(foreach p,$(PLATFORMS), \
+		docker manifest annotate $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed \
+			$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-$(lastword $(subst /, ,$(p))) \
+			--os linux --arch $(lastword $(subst /, ,$(p))) ; \
+	)
+	@echo "==> Pushing multi-arch manifest"
+	@docker manifest push $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed
+	@echo "==> Cosign-signing manifest list"
+	${CURDIR}/scripts/make-cosign-sig.sh $(COCO_PKG_IMGRS) cosign-signed $(REGISTRY)
+	@echo "==> Done! Image: $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed"
+
+imgrs-multi-arch-cosign-signed-key2: setup-buildx
+	@echo "==> Building imgrs-multi-arch-cosign-signed-key2 for: $(PLATFORMS)"
+	@for platform in $(PLATFORMS); do \
+		arch=$$(echo $$platform | cut -d/ -f2); \
+		per_arch_tag="$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2-$$arch"; \
+		\
+		echo "==> [$$arch] Building image"; \
+		docker buildx build \
+			--platform "$$platform" \
+			--provenance=false \
+			--no-cache \
+			--build-arg IMAGE_VARIANT=cosign-signed-key2 \
+			-t "imgrs-cosign-signed-key2:$$arch" \
+			--load \
+			-f dockerfiles/busybox/Dockerfile \
+			dockerfiles/busybox ; \
+		\
+		echo "==> [$$arch] Pushing image"; \
+		skopeo copy --insecure-policy --override-arch "$$arch" \
+			"docker-daemon:imgrs-cosign-signed-key2:$$arch" \
+			"docker://$$per_arch_tag"; \
+		\
+		echo "==> [$$arch] Cosign-signing per-arch image with key2"; \
+		COSIGN_PASSWORD="$${COSIGN_PASSWORD_KEY2}" cosign sign --yes --key keys/sign/cosign2.key \
+			"$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2-$$arch"; \
+	done
+	@echo "==> Creating multi-arch manifest"
+	@docker manifest rm $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2 2>/dev/null || true
+	@docker manifest create $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2 \
+		$(foreach p,$(PLATFORMS),$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2-$(lastword $(subst /, ,$(p))))
+	@$(foreach p,$(PLATFORMS), \
+		docker manifest annotate $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2 \
+			$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2-$(lastword $(subst /, ,$(p))) \
+			--os linux --arch $(lastword $(subst /, ,$(p))) ; \
+	)
+	@echo "==> Pushing multi-arch manifest"
+	@docker manifest push $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2
+	@echo "==> Cosign-signing manifest list with key2"
+	COSIGN_PASSWORD="$${COSIGN_PASSWORD_KEY2}" cosign sign --yes --key keys/sign/cosign2.key "$(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2"
+	@echo "==> Done! Image: $(REGISTRY)/$(COCO_PKG_IMGRS):cosign-signed-key2"
