@@ -4,14 +4,23 @@ These keys are for **testing only**. Do not use them in production.
 
 ## Cosign
 
-Keys generated with:
+Primary key pair (`cosign.key` / `cosign.pub`) generated with:
 
 ```bash
 COSIGN_PASSWORD=just1testing2password3 cosign generate-key-pair
 ```
 
-The `COSIGN_PASSWORD` secret must be configured in the GitHub repo for the
-workflow to work.
+Second key pair (`cosign2.key` / `cosign2.pub`) generated with:
+
+```bash
+COSIGN_PASSWORD=just1testing2password3key2 cosign generate-key-pair
+```
+
+This second key is used to produce images signed with a *different* key,
+so tests can verify that verification rejects a wrong-key signature.
+
+The `COSIGN_PASSWORD` and `COSIGN_PASSWORD_KEY2` secrets must be configured
+in the GitHub repo for the workflow to work.
 
 ## GPG ("simple signing")
 
