@@ -320,6 +320,8 @@ imgrs-multi-arch-unsigned: setup-buildx
 		docker buildx build \
 			--platform "$$platform" \
 			--provenance=false \
+			--no-cache \
+			--build-arg IMAGE_VARIANT=unsigned \
 			-t "imgrs-unsigned:$$arch" \
 			--load \
 			-f dockerfiles/busybox/Dockerfile \
@@ -353,6 +355,8 @@ imgrs-multi-arch-cosign-signed: setup-buildx
 		docker buildx build \
 			--platform "$$platform" \
 			--provenance=false \
+			--no-cache \
+			--build-arg IMAGE_VARIANT=cosign-signed \
 			-t "imgrs-cosign-signed:$$arch" \
 			--load \
 			-f dockerfiles/busybox/Dockerfile \
@@ -391,6 +395,8 @@ imgrs-multi-arch-cosign-signed-key2: setup-buildx
 		docker buildx build \
 			--platform "$$platform" \
 			--provenance=false \
+			--no-cache \
+			--build-arg IMAGE_VARIANT=cosign-signed-key2 \
 			-t "imgrs-cosign-signed-key2:$$arch" \
 			--load \
 			-f dockerfiles/busybox/Dockerfile \
